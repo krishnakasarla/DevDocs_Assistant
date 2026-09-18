@@ -1,0 +1,51 @@
+image: python:3.11
+
+definitions:
+  caches:
+    backend-pip: ~/.cache/pip
+    frontend-npm: frontend/node_modules
+  services:
+    docker:
+      memory: 3072
+  steps:
+    - step: &lint
+        name: Lint
+        caches: [backend-pip, frontend-npm]
+        script:
+          - pip install -e './backend[dev]'
+          - ruff check backend
+          - cd frontend && npm install && npm run lint
+    - step: &test
+        name: Test
+        caches: [backend-pip, frontend-npm]
+        script:
+          - pip install -e './backend[dev]'
+          - cd backend && pytest --cov=app --cov-report=term-missing
+          - cd ../frontend && npm install && npm test
+    - step: &build
+        name: Build images
+        services: [docker]
+        caches: [docker]
+        script:
+          - docker build -t devdocs-backend:${BITBUCKET_COMMIT} backend
+          - docker build -t devdocs-frontend:${BITBUCKET_COMMIT} frontend
+    - step: &build-push
+        name: Build and push images
+        image: atlassian/default-image:4
+        services: [docker]
+        caches: [docker]
+        script:
+          - pip3 install awscli
+          - export IMAGE_TAG="${BITBUCKET_COMMIT}"
+          - bash scripts/push_to_ecr.sh "$IMAGE_TAG"
+
+pipelines:
+  default:
+    - step: *lint
+    - step: *test
+    - step: *build
+  branches:
+    main:
+      - step: *lint
+      - step: *test
+      - step: *build-push

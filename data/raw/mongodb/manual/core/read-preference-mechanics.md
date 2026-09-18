@@ -1,0 +1,47 @@
+> For the complete MongoDB documentation index, see www.mongodb.com/docs/llms.txt
+
+# Server Selection Algorithm
+
+MongoDB drivers use a Server Selection algorithm to choose which replica set member to use or, when connected to multiple [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) instances, which [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) instance to use.
+
+Server selection occurs once per operation.
+
+**Note:**
+
+[Transactions](/docs/manual/core/transactions#std-label-transactions) that contain read operations must use read preference [`primary`](/docs/manual/reference/glossary#std-term-primary). All operations in a given transaction must route to the same member.
+
+## Read Preference for Replica Sets
+
+Server selection occurs once per operation and is governed by the [read preference](/docs/manual/core/read-preference#std-label-read-preference) and `localThresholdMS` settings to determine member eligibility for reads. The read preference is re-evaluated for each operation.
+
+| Read Preference Mode | Selection Process |
+| --- | --- |
+| [`primary`](/docs/manual/reference/glossary#std-term-primary) (Default) | The driver selects the primary. |
+| [`secondary`](/docs/manual/reference/glossary#std-term-secondary) | The driver assembles a list of eligible secondary members. [maxStalenessSeconds](/docs/manual/core/read-preference-staleness#std-label-replica-set-read-preference-max-staleness) and [tag sets](/docs/manual/tutorial/configure-replica-set-tag-sets) specified in the read preference can further restrict the eligibility of the members.; If the list of eligible members is not empty, the driver determines which eligible member is the "closest" (i.e. the member with the lowest average network round-trip-time) and calculates a latency window by adding the average round-trip-time of this "closest" server and the `localThresholdMS`. The  driver uses this latency window to pare down the list of eligible members to those members that fall within this window.; From this list of eligible members that fall within the latency window, the  driver randomly chooses an eligible member. |
+| [`nearest`](/docs/manual/core/read-preference#mongodb-readmode-nearest) | The driver assembles a list of eligible members (primary and secondaries). [maxStalenessSeconds](/docs/manual/core/read-preference-staleness#std-label-replica-set-read-preference-max-staleness) and [tag sets](/docs/manual/tutorial/configure-replica-set-tag-sets)  specified in the read preference can further limit the eligibility of the members.; If the list of eligible members is not empty, the driver determines which eligible member is the "closest" (i.e. the member with the lowest average network round-trip-time) and calculates a latency window by adding the average round-trip-time of this "closest" server and the `localThresholdMS` . The driver uses this latency window to pare down the list of eligible members to those members that fall within this window.; From this list of eligible members that fall within the latency window, the driver randomly chooses an eligible member. |
+| [`primaryPreferred`](/docs/manual/core/read-preference#mongodb-readmode-primaryPreferred) | If the primary is available, driver selects the primary.; If the primary is unavailable, server selection follows the process for the read preference `secondary` to select an eligible secondary member. |
+| [`secondaryPreferred`](/docs/manual/core/read-preference#mongodb-readmode-secondaryPreferred) | Following the server selection process for the read preference `secondary`, if a list of eligible secondary members is non-empty, driver chooses an eligible secondary member.; Otherwise, if the list is empty, driver selects the primary. |
+
+## Read Preference for Sharded Clusters
+
+### Load Balancing
+
+If there is more than one [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) instance in the connection seed list, the driver determines which [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) is the "closest" (that is, the member with the lowest average network round-trip-time) and calculates the latency window by adding the average round-trip-time of this "closest" [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) instance and the `localThresholdMS`. The driver load balances randomly across the [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) instances that fall within the latency window.
+
+**Note:**
+
+`localThresholdMS` biases server selection toward lower-latency local targets. The setting can't remove the cross-region network topology that a single private endpoint creates or guarantee all connections remain in the local region. In this configuration, a client can still connect through a [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) in another region.
+
+### Read Preference and Shards
+
+For sharded clusters that have replica set shards, [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) applies the read preference when reading from the shards. Server selection is governed by the [read preference](/docs/manual/core/read-preference) and [`replication.localPingThresholdMs`](/docs/manual/reference/configuration-options#mongodb-setting-replication.localPingThresholdMs) settings. The read preference is re-evaluated for each operation.
+
+| Read Preference Mode | Selection Process |
+| --- | --- |
+| [`primary`](/docs/manual/reference/glossary#std-term-primary) (Default) | The [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) selects the primary. |
+| [`secondary`](/docs/manual/reference/glossary#std-term-secondary) | The [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) assembles a list of eligible secondary members. [maxStalenessSeconds](/docs/manual/core/read-preference-staleness#std-label-replica-set-read-preference-max-staleness) and [tag sets](/docs/manual/tutorial/configure-replica-set-tag-sets) specified in the read preference can further restrict the eligibility of the members.; If the list of eligible members is not empty, the [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) determines which eligible member is the "closest" (i.e. the member with the lowest average network round-trip-time) and calculates a latency window by adding the average round-trip-time of this "closest" server and the [`replication.localPingThresholdMs`](/docs/manual/reference/configuration-options#mongodb-setting-replication.localPingThresholdMs) (or [`--localThreshold`](/docs/manual/reference/program/mongos#std-option-mongos.--localThreshold) command line option). The [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) uses this latency window to pare down the list of eligible members to those members that fall within this window.; From this list of eligible members that fall within the latency window, the [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) randomly chooses an eligible member. |
+| [`nearest`](/docs/manual/core/read-preference#mongodb-readmode-nearest) | The [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) assembles a list of eligible members (primary and secondaries). [maxStalenessSeconds](/docs/manual/core/read-preference-staleness#std-label-replica-set-read-preference-max-staleness) and [tag sets](/docs/manual/tutorial/configure-replica-set-tag-sets) specified in the read preference can further limit the eligibility of the members.; If the list of eligible members is not empty, the [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) determines which eligible member is the "closest" (i.e. the member with the lowest average network round-trip-time) and calculates a latency window by adding the average round-trip-time of this "closest" server and the [`replication.localPingThresholdMs`](/docs/manual/reference/configuration-options#mongodb-setting-replication.localPingThresholdMs) (or [`--localThreshold`](/docs/manual/reference/program/mongos#std-option-mongos.--localThreshold) command line option) . The [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) uses this latency window to pare down the list of eligible members to those members that fall within this window.; From this list of eligible members that fall within the latency window, the [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) randomly chooses an eligible member. |
+| [`primaryPreferred`](/docs/manual/core/read-preference#mongodb-readmode-primaryPreferred) | If the primary is available, [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) selects the primary.; If the primary is unavailable, server selection follows the process for the read preference `secondary`. |
+| [`secondaryPreferred`](/docs/manual/core/read-preference#mongodb-readmode-secondaryPreferred) | Following the server selection process for the read preference `secondary`, if a list of eligible secondary members is non-empty, [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) chooses an eligible secondary.; If the list of eligible secondary members is empty, [`mongos`](/docs/manual/reference/program/mongos#mongodb-binary-bin.mongos) selects the primary. |
+
+The default threshold value is 15 milliseconds.

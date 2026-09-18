@@ -1,0 +1,65 @@
+[
+  {
+    "question": "How do I create a basic FastAPI application?",
+    "expected_sources": [
+      "fastapi/tutorial/first-steps.md",
+      "fastapi/tutorial/index.md",
+      "fastapi/project-generation.md"
+    ],
+    "supported": true
+  },
+  {
+    "question": "How do I define and validate a JSON request body in FastAPI?",
+    "expected_sources": ["fastapi/tutorial/body.md"],
+    "supported": true
+  },
+  {
+    "question": "How do I declare query parameters in FastAPI?",
+    "expected_sources": ["fastapi/tutorial/query-params.md"],
+    "supported": true
+  },
+  {
+    "question": "How can I raise HTTPException in FastAPI?",
+    "expected_sources": ["fastapi/tutorial/handling-errors.md"],
+    "supported": true
+  },
+  {
+    "question": "How can I create a WebSocket endpoint in FastAPI?",
+    "expected_sources": ["fastapi/advanced/websockets.md"],
+    "supported": true
+  },
+  {
+    "question": "How should I read environment variables in a FastAPI application?",
+    "expected_sources": ["fastapi/environment-variables.md"],
+    "supported": true
+  },
+  {
+    "question": "How do I test a FastAPI application?",
+    "expected_sources": [
+      "fastapi/tutorial/testing.md",
+      "fastapi/advanced/async-tests.md",
+      "fastapi/reference/testclient.md"
+    ],
+    "supported": true
+  },
+  {
+    "question": "How do dependencies work in FastAPI?",
+    "expected_sources": ["fastapi/tutorial/dependencies/index.md"],
+    "supported": true
+  },
+  {
+    "question": "How do I configure Django ORM migrations?",
+    "expected_sources": [],
+    "supported": false
+  },
+  {
+    "question": "How do I build a React Native application?",
+    "expected_sources": [],
+    "supported": false
+  },
+  {
+    "question": "What is the capital of Australia?",
+    "expected_sources": [],
+    "supported": false
+  }
+]

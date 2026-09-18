@@ -1,0 +1,1 @@
+"""DevDocs Assistant backend package."""
