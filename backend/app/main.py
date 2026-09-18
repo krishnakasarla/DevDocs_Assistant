@@ -1,3 +1,4 @@
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -7,6 +8,9 @@ from app.api.health import router as health_router
 from app.api.routes import router as api_router
 from app.core.config import get_settings
 from app.db.mongo import database_lifespan
+
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
 
 
 @asynccontextmanager
